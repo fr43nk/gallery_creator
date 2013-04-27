@@ -73,8 +73,10 @@ abstract class DisplayGallery extends \Module
               if (strlen(\Input::get('items')))
               {
                      $this->DETAIL_VIEW = true;
-              } else {
-                     
+              }
+              else
+              {
+
               }
 
               //assigning the frontend template
@@ -87,7 +89,7 @@ abstract class DisplayGallery extends \Module
               if (!\Input::get('items'))
                      unset($_SESSION['gallery_creator']['PAGINATION']);
               if (\Input::get('page') && !$this->DETAIL_VIEW)
-                     $_SESSION['gallery_creator']['PAGINATION']  = \Input::get('page');
+                     $_SESSION['gallery_creator']['PAGINATION'] = \Input::get('page');
 
               return parent::generate();
 
@@ -318,8 +320,10 @@ abstract class DisplayGallery extends \Module
               }
 
               //Detailansicht nur mit Lightbox, für ce_gc_lightbox.tpl Template
-              if (\Input::get('isAjax') && \Input::get('LightboxSlideshow') && \Input::get('albumId'))
+              if (\Input::get('isAjax') && \Input::get('LightboxSlideshow') && \Input::get('action') && \Input::get('id') && \Input::get('albumId'))
               {
+
+
                      //Authentifizierung bei vor Zugriff geschützten Alben, dh. der Benutzer bekommt, wenn nicht berechtigt, nur das Albumvorschaubild zu sehen.
                      $objAlbum = $this->Database->prepare('SELECT alias FROM tl_gallery_creator_albums WHERE id=?')->execute(\Input::get('albumId'));
                      $this->feUserAuthentication($objAlbum->alias);
@@ -327,7 +331,20 @@ abstract class DisplayGallery extends \Module
                             return false;
 
                      $json = "";
-                     $objPicture = $this->Database->prepare('SELECT * FROM tl_gallery_creator_pictures WHERE published=? AND pid=? ORDER BY id')->executeUncached(1, \Input::get('albumId'));
+
+
+                     // sorting direction
+                     $ceType = \Input::get('action');
+                     if ($ceType == 'cte')
+                     {
+                            $sorting = $this->gc_picture_sorting . ' ' . $this->gc_picture_sorting_direction;
+                     }
+                     else
+                     {
+                            $sorting = 'sorting DESC';
+                     }
+                     
+                     $objPicture = $this->Database->prepare('SELECT * FROM tl_gallery_creator_pictures WHERE published=? AND pid=? ORDER BY ?')->executeUncached(1, \Input::get('albumId'), $sorting);
                      while ($objPicture->next())
                      {
                             $href = $objPicture->path;
@@ -606,12 +623,11 @@ abstract class DisplayGallery extends \Module
               {
                      return null;
               }
-              
-             
+
               //check if there is a custom thumbnail selected
               if ($objPicture->customThumb > 0)
               {
-                     $objFile = \FilesModel::findByPk($objPicture->customThumb);  
+                     $objFile = \FilesModel::findByPk($objPicture->customThumb);
                      if ($objFile !== null)
                      {
                             if (is_file(TL_ROOT . '/' . $objFile->path))
@@ -786,13 +802,13 @@ abstract class DisplayGallery extends \Module
               //wichtig fuer Ajax-Anwendungen
               $this->Template->elementType = strtolower($strContentType);
               $this->Template->elementId = $this->id;
-              
+
               // Load the current album from db
               $objAlbum = $this->Database->prepare('SELECT * FROM tl_gallery_creator_albums WHERE id=?')->execute($intAlbumId);
-              
+
               //store all album-data in the array
               $this->Template->arrAlbumdata = $objAlbum->fetchAssoc();
-              
+
               // store the data of the current album in the session
               $_SESSION['gallery_creator']['CURRENT_ALBUM'] = $this->Template->arrAlbumdata;
 
@@ -874,7 +890,7 @@ abstract class DisplayGallery extends \Module
               $url .= isset($_SESSION['gallery_creator']['PAGINATION']) ? '?page=' . $_SESSION['gallery_creator']['PAGINATION'] : '';
               return $url;
        }
-       
+
        /**
         * initCounter
         * @param integer
@@ -887,7 +903,7 @@ abstract class DisplayGallery extends \Module
                      // do not count spiders/bots
                      return;
               }
-              
+
               if (TL_MODE == 'FE')
               {
                      $objDb = \Database::getInstance()->prepare('SELECT visitors, visitors_details FROM tl_gallery_creator_albums WHERE id=?')->executeUncached($intAlbumId);
@@ -898,32 +914,32 @@ abstract class DisplayGallery extends \Module
                      }
 
                      // increase the number of visitors by one
-                     $intCount =  (int) $objDb->visitors + 1;
-                     
+                     $intCount = (int)$objDb->visitors + 1;
+
                      $arrVisitors = strlen($objDb->visitors_details) ? unserialize($objDb->visitors_details) : array();
                      if (is_array($arrVisitors))
                      {
                             // keep visiors data in the db unless 20 other users visited the album 
                             if (count($arrVisitors) == 20)
                             {
-                                  // slice the last position
-                                  $arrVisitors = array_slice($arrVisitors, 0, count($arrVisitors) - 1);
+                                   // slice the last position
+                                   $arrVisitors = array_slice($arrVisitors, 0, count($arrVisitors) - 1);
                             }
                      }
                      else
                      {
                             $set = array('visitors_details' => '');
                             $objDbUpd = \Database::getInstance()->prepare('UPDATE tl_gallery_creator_albums %s WHERE id=?')->set($set)->executeUncached($intAlbumId);
-                     }     
-                     
+                     }
+
                      //build up the array
-                     $newVisitor = array ($_SERVER['REMOTE_ADDR'] => array(
-                                   'ip' => $_SERVER['REMOTE_ADDR'],
-                                   'pid' => $intAlbumId,
-                                   'user_agent' => $_SERVER['HTTP_USER_AGENT'],
-                                   'tstamp' => time(),
-                                   'url' => \Environment::get('request'),
-                            )
+                     $newVisitor = array($_SERVER['REMOTE_ADDR'] => array(
+                            'ip' => $_SERVER['REMOTE_ADDR'],
+                            'pid' => $intAlbumId,
+                            'user_agent' => $_SERVER['HTTP_USER_AGENT'],
+                            'tstamp' => time(),
+                            'url' => \Environment::get('request'),
+                     )
                      );
 
                      if (count($arrVisitors))
@@ -937,7 +953,7 @@ abstract class DisplayGallery extends \Module
                             $arrVisitors = array();
                             $arrVisitors[] = array($_SERVER['REMOTE_ADDR'] => $newVisitor);
                      }
-                     
+
                      // update database
                      $set = array('visitors' => $intCount, 'visitors_details' => serialize($arrVisitors));
                      $objDb = \Database::getInstance()->prepare('UPDATE tl_gallery_creator_albums %s WHERE id=?')->set($set)->executeUncached($intAlbumId);
