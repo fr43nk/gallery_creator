@@ -74,10 +74,6 @@ abstract class DisplayGallery extends \Module
               {
                      $this->DETAIL_VIEW = true;
               }
-              else
-              {
-
-              }
 
               //assigning the frontend template
               $this->strTemplate = $this->gc_template != "" ? $this->gc_template : $this->strTemplate;
@@ -302,20 +298,13 @@ abstract class DisplayGallery extends \Module
                      if (GALLERY_CREATOR_ALBUM_AUTHENTIFICATION_ERROR === true)
                             return false;
 
-                     $objPictures = $this->Database->prepare('SELECT count(id) AS Anzahl FROM tl_gallery_creator_pictures WHERE published=? AND pid=? AND id!=?')->execute(1, \Input::get('AlbumId'), $objAlbum->thumb);
-                     if ($objPictures->Anzahl < 2)
+                     $arrJSON = array();
+                     $objPicture = $this->Database->prepare('SELECT id,path FROM tl_gallery_creator_pictures WHERE published=? AND pid=? ORDER BY id')->executeUncached(1, \Input::get('AlbumId'));
+                     while ($objPicture->next())
                      {
-                            return json_encode(array('thumbPath' => ''));
+                            $arrJSON[$objPicture->id] = \Image::get($objPicture->path, $arrSize[0], $arrSize[1], $arrSize[2]);
                      }
-
-                     $limit = \Input::get('limit');
-                     $objPicture = $this->Database->prepare('SELECT name, path FROM tl_gallery_creator_pictures WHERE published=? AND pid=? ORDER BY id')->limit(1, $limit)->executeUncached(1, \Input::get('AlbumId'), $objAlbum->thumb);
-                     $jsonUrl = array(
-                            'thumbPath' => \Image::get($objPicture->path, $arrSize[0], $arrSize[1], $arrSize[2]),
-                            'eventId' => \Input::get('eventId')
-                     );
-
-                     echo json_encode($jsonUrl);
+                     echo json_encode($arrJSON);
                      exit;
               }
 
@@ -343,7 +332,7 @@ abstract class DisplayGallery extends \Module
                      {
                             $sorting = 'sorting DESC';
                      }
-                     
+
                      $objPicture = $this->Database->prepare('SELECT * FROM tl_gallery_creator_pictures WHERE published=? AND pid=? ORDER BY ?')->executeUncached(1, \Input::get('albumId'), $sorting);
                      while ($objPicture->next())
                      {
