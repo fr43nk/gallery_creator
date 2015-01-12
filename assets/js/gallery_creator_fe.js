@@ -19,6 +19,17 @@
             //constructor
             this.thumbOpacity = 1;
         },
+        fade: function(iElm, iOpa)
+        {
+          if( window.jQuery )
+          {
+            iElem.fadeTo(iOpa);
+          }
+          else if( window.MooTools )
+          {
+            iElem.fade(iOpa);
+          }
+        },
 
         initThumbSlide: function (el, albumId, countPictures) {
             var self = this;
