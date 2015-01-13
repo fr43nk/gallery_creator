@@ -114,16 +114,16 @@ function GalleryCreatorFe()
 			if (l_responseText.thumbPath != "" && l_responseText.thumbPath != s_self.thumb.getAttribute('src'))
 			{
 				var currentTime = new Date();
-				if (currentTime.getTime() - self.lastSlide < 1200)
+				if (currentTime.getTime() - s_self.lastSlide < 1200)
 				{
-					self.startThumbSlide(eventId);
+					s_self.startThumbSlide(eventId);
 					return;
 				}
-				self.lastSlide = currentTime.getTime();
+				s_self.lastSlide = currentTime.getTime();
 				var thumb = s_self.thumb;
 				thumb.setAttribute('src', l_responseText.thumbPath);
 			}
-			self.startThumbSlide(l_responseText.eventId);
+			s_self.startThumbSlide(l_responseText.eventId);
 		};
 		if (s_self.currentPic == s_self.countPictures - 1)
 		{
