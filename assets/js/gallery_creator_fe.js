@@ -42,6 +42,7 @@ function GalleryCreatorFe()
 	var s_self = this;
 	var m_thumbOpacity = 1.0;
 	var m_Xmlhttp = null;
+	var m_timeoutHndl = null;
 	try
 	{
 		m_Xmlhttp = new XMLHttpRequest();
@@ -75,6 +76,8 @@ function GalleryCreatorFe()
 	this.stopThumbSlide = function ()
 	{
 		s_self.eventId = null;
+		clearTimeout(m_timeoutHndl);
+		m_timeoutHndl = null;
 		if( s_self.thumb.getAttribute('src') != s_self.defaultThumbSrc)
 		{
 			if( window.jQuery )
@@ -114,16 +117,11 @@ function GalleryCreatorFe()
 			if (l_responseText.thumbPath != "" && l_responseText.thumbPath != s_self.thumb.getAttribute('src'))
 			{
 				var currentTime = new Date();
-				if (currentTime.getTime() - s_self.lastSlide < 1200)
-				{
-					s_self.startThumbSlide(eventId);
-					return;
-				}
 				s_self.lastSlide = currentTime.getTime();
 				var thumb = s_self.thumb;
 				thumb.setAttribute('src', l_responseText.thumbPath);
 			}
-			s_self.startThumbSlide(l_responseText.eventId);
+			m_timeoutHndl = setTimeout(s_self.startThumbSlide,1000,l_responseText.eventId);
 		};
 		if (s_self.currentPic == s_self.countPictures - 1)
 		{
