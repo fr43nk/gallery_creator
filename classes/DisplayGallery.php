@@ -373,7 +373,7 @@ abstract class DisplayGallery extends \Module
 			}
 
 			$limit = \Input::get('limit');
-			$objPicture = $this->Database->prepare('SELECT name, uuid FROM tl_gallery_creator_pictures WHERE published=? AND pid=? ORDER BY id')
+			$objPicture = $this->Database->prepare('SELECT path, uuid FROM tl_gallery_creator_pictures WHERE published=? AND pid=? ORDER BY id')
 										 ->limit(1, $limit)
 										 ->executeUncached(1, \Input::get('AlbumId'), $objAlbum->thumb);
 			$objFile = \FilesModel::findByUuid($objPicture->uuid);
