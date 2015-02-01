@@ -6,22 +6,50 @@
  * @author     Marko Cupic <m.cupic@gmx.ch>
  */
 
-if (typeof(window.event) != "undefined")
+"use strict";
+
+// Code by: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/indexOf
+if(!Array.prototype.indexOf)
 {
-	window.attachEvent("onDOMContentLoaded", function ()
+	Array.prototype.indexOf = function(searchE, startIndex)
 	{
-		//Create the global GalleryCreatorFe-object
-		objGalleryCreator = new GalleryCreatorFe();
-	});
+		var k;
+		if( this == null )
+			throw new TypeError("this is not defined or null");
+
+		var o = Object(this);
+		var len = o.length >>> 0;
+		if(len===0)
+			return -1;
+		var n = +startIndex || 0;
+		if( Math.abs(n) === Infinity )
+		{
+			n = 0;
+		}
+		if(len<n)
+			return -1;
+		k = Math.max(n >= 0 ? n : len - Math.abs(n), 0);
+		while(k<len)
+		{
+			if( k in o && o[k] === searchE)
+			{
+				return k;
+			}
+			k++;
+		}
+		return -1;
+	};
 }
-else
+
+var JSON = JSON || {};
+
+JSON.parse = JSON.parse || function(val)
 {
-	window.addEventListener('DOMContentLoaded', function ()
-	{
-		//Create the global GalleryCreatorFe-object
-		objGalleryCreator = new GalleryCreatorFe();
-	});
-}
+	if( val === "" )
+		return '""';
+	eval("var jo=" + val + ";");
+	return jo;
+};
 
 function GalleryCreatorFe()
 {
@@ -29,6 +57,8 @@ function GalleryCreatorFe()
 	var m_thumbOpacity = 1.0;
 	var m_Xmlhttp = null;
 	var m_timeoutHndl = null;
+	var m_timeout = 1000;
+	var m_currentTime;
 	try
 	{
 		m_Xmlhttp = new XMLHttpRequest();
@@ -48,17 +78,16 @@ function GalleryCreatorFe()
 		s_self.currentPic = 0;
 		s_self.defaultThumbSrc = s_self.thumb.getAttribute('src');
 		var currentTime = new Date();
-		s_self.eventId = currentTime.getTime();
-		s_self.lastSlide = currentTime.getTime();
+		m_currentTime = currentTime.getTime();
 		//add the onmouseout-event
 		s_self.bind(s_self.currentDiv,'mouseout', s_self.stopThumbSlide);
 		// slide thumbs after a delay of xxx milliseconds
-		this.startThumbSlide(s_self.eventId);
+		this.startThumbSlide();
 	};
 
 	this.stopThumbSlide = function ()
 	{
-		s_self.eventId = null;
+		m_currentTime = null;
 		clearTimeout(m_timeoutHndl);
 		m_timeoutHndl = null;
 		if( s_self.thumb.getAttribute('src') != s_self.defaultThumbSrc)
@@ -75,11 +104,11 @@ function GalleryCreatorFe()
 			document.id(s_self.thumb.id).fade(m_thumbOpacity);
 	};
 
-	this.startThumbSlide = function (eventId)
+	this.startThumbSlide = function ()
 	{
 		//next pic
 		s_self.currentPic++;
-		var lData = 'isAjax=1&thumbSlider=1&AlbumId=' + s_self.albumId + '&limit=' + s_self.currentPic + '&eventId=' + eventId;
+		var lData = 'isAjax=1&thumbSlider=1&AlbumId=' + s_self.albumId + '&limit=' + s_self.currentPic + '&eventId=' + m_currentTime;
 		var lUrl = document.URL;
 		if( document.URL.search(/(?:\?.*)$/) === -1)
 			lUrl += "?";
@@ -101,16 +130,15 @@ function GalleryCreatorFe()
 				return;
 			}
 			if (!l_responseText) return;
-			if (l_responseText.eventId != s_self.eventId) return;
-			if (l_responseText.eventId == null || s_self.eventId == null) return;
+			if (Number(l_responseText.eventId) != m_currentTime) return;
+			if (l_responseText.eventId == null || m_currentTime == null) return;
 			if (l_responseText.thumbPath != "" && l_responseText.thumbPath != s_self.thumb.getAttribute('src'))
 			{
 				var currentTime = new Date();
-				s_self.lastSlide = currentTime.getTime();
 				var thumb = s_self.thumb;
 				thumb.setAttribute('src', l_responseText.thumbPath);
 			}
-			m_timeoutHndl = setTimeout(s_self.startThumbSlide,2000,l_responseText.eventId);
+			m_timeoutHndl = setTimeout(s_self.startThumbSlide,m_timeout,m_currentTime);
 		};
 		m_Xmlhttp.open("GET", lUrl, true);
 		m_Xmlhttp.setRequestHeader("X-Requested-With", "XMLHttpRequest");
@@ -123,14 +151,10 @@ function GalleryCreatorFe()
 
 	this.bind = function(iObj, iEvType, iFct)
 	{
-		if( typeof iObj.event !== "undefined" )
-		{
-			iObj.attachEvent("on"+iEvType, iFct);
-		}
-		else
-		{
+		if( window.addEventListener )
 			iObj.addEventListener(iEvType, iFct);
-		}
+		else
+			iObj.attachEvent("on"+iEvType, iFct);
 	}
 
 	this.find = function(iObject, iTag)
@@ -164,11 +188,22 @@ function GalleryCreatorFe()
 		if( typeof iObject !== "undefined" )
 		{
 			var lStyle = iObject.getAttribute("class");
-			if( typeof lStyle !== "undefined" )
+			if(lStyle === null)
 			{
-				return lStyle.replace(/^([\s]*)([.]*)([\s]*)$/g,'\2').split(" ");
+				lStyle = iObject.getAttributeNode("class");
+				if( typeof lStyle !== "undefined" && lStyle !== null )
+				{
+					lStyle = lStyle.nodeValue;
+				}
+			}
+			if( typeof lStyle !== "undefined" && lStyle !== null )
+			{
+				return lStyle.replace(/^([\s]*)([.]*)([\s]*)$/g,"$2").split(" ");
 			}
 		}
 	}
 };
+
+// global CalleryCreatorFe Object
+var objGalleryCreator = new GalleryCreatorFe();
 
